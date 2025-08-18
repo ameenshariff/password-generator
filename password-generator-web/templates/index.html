@@ -1,0 +1,201 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Password Generator</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f0f2f5;
+            color: #1c1e21;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        h1 {
+            color: #1877f2;
+        }
+        .container {
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1), 0 8px 16px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            padding: 20px;
+            width: 100%;
+            max-width: 500px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+        input[type='number'], select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #dddfe2;
+            border-radius: 6px;
+            box-sizing: border-box;
+        }
+        .checkbox-group label {
+            font-weight: normal;
+        }
+        button {
+            background-color: #1877f2;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            padding: 10px 15px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+        }
+        button:hover {
+            background-color: #166fe5;
+        }
+        .result {
+            background-color: #e7f3ff;
+            border: 1px solid #1877f2;
+            border-radius: 6px;
+            padding: 15px;
+            margin-top: 20px;
+            word-wrap: break-word;
+            text-align: center;
+            font-size: 18px;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Password Generator</h1>
+
+    <div class="container">
+        <h2>Random Password</h2>
+        <form id="random-form">
+            <div class="form-group">
+                <label for="length">Length</label>
+                <input type="number" id="length" name="length" value="16">
+            </div>
+            <div class="form-group checkbox-group">
+                <input type="checkbox" id="use_uppercase" name="use_uppercase" checked> <label for="use_uppercase">Uppercase</label><br>
+                <input type="checkbox" id="use_lowercase" name="use_lowercase" checked> <label for="use_lowercase">Lowercase</label><br>
+                <input type="checkbox" id="use_numbers" name="use_numbers" checked> <label for="use_numbers">Numbers</label><br>
+                <input type="checkbox" id="use_symbols" name="use_symbols" checked> <label for="use_symbols">Symbols</label><br>
+            </div>
+            <button type="submit">Generate</button>
+        </form>
+    </div>
+
+    <div class="container">
+        <h2>Memorable Password</h2>
+        <form id="memorable-form">
+            <div class="form-group">
+                <label for="num_words">Number of Words</label>
+                <input type="number" id="num_words" name="num_words" value="2">
+            </div>
+            <div class="form-group">
+                <label for="min_length">Min Length</label>
+                <input type="number" id="min_length" name="min_length" value="0">
+            </div>
+            <div class="form-group">
+                <label for="max_length">Max Length</label>
+                <input type="number" id="max_length" name="max_length" value="0">
+            </div>
+            <div class="form-group">
+                <label for="num_numbers">Number of Numbers</label>
+                <input type="number" id="num_numbers" name="num_numbers" value="2">
+            </div>
+            <div class="form-group">
+                <label for="num_symbols">Number of Symbols</label>
+                <input type="number" id="num_symbols" name="num_symbols" value="2">
+            </div>
+            <div class="form-group">
+                <label for="capitalization">Capitalization</label>
+                <select id="capitalization" name="capitalization">
+                    <option value="first">First Letter</option>
+                    <option value="random">Random</option>
+                    <option value="none">None</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="leet">Leet Speak</label>
+                <select id="leet" name="leet">
+                    <option value="some">Some</option>
+                    <option value="all">All</option>
+                    <option value="none">None</option>
+                </select>
+            </div>
+            <button type="submit">Generate</button>
+        </form>
+    </div>
+
+    <div id="result-container" class="container" style="display: none;">
+        <h2>Generated Password</h2>
+        <div id="result" class="result"></div>
+    </div>
+
+    <script>
+        document.getElementById('random-form').addEventListener('submit', function (e) {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const data = {
+                type: 'random',
+                length: formData.get('length'),
+                use_uppercase: formData.has('use_uppercase'),
+                use_lowercase: formData.has('use_lowercase'),
+                use_numbers: formData.has('use_numbers'),
+                use_symbols: formData.has('use_symbols'),
+            };
+            generatePassword(data);
+        });
+
+        document.getElementById('memorable-form').addEventListener('submit', function (e) {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const data = {
+                type: 'memorable',
+                num_words: formData.get('num_words'),
+                min_length: formData.get('min_length'),
+                max_length: formData.get('max_length'),
+                num_numbers: formData.get('num_numbers'),
+                num_symbols: formData.get('num_symbols'),
+                capitalization: formData.get('capitalization'),
+                leet: formData.get('leet'),
+            };
+            generatePassword(data);
+        });
+
+        async function generatePassword(data) {
+            const response = await fetch('/generate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data),
+            });
+
+            const resultContainer = document.getElementById('result-container');
+            const resultDiv = document.getElementById('result');
+
+            if (response.ok) {
+                const json = await response.json();
+                resultDiv.textContent = json.password;
+                resultContainer.style.display = 'block';
+            } else {
+                const json = await response.json();
+                resultDiv.textContent = `Error: ${json.error}`;
+                resultContainer.style.display = 'block';
+            }
+        }
+    </script>
+
+</body>
+</html>
