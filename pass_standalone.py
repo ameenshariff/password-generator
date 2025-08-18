@@ -1345,7 +1345,7 @@ def generate_memorable_password(num_words, min_length, max_length, num_numbers, 
             word = ''.join(c.upper() if secrets.choice([True, False]) else c.lower() for c in word)
 
         # Leetspeak
-        if leet_level != 'none':
+        if leet_level != 'none' and num_numbers > 0:
             new_word = ''
             for char in word:
                 if char.lower() in LEET_SUBSTITUTIONS:
@@ -1360,10 +1360,12 @@ def generate_memorable_password(num_words, min_length, max_length, num_numbers, 
 
     # 2. Add numbers and symbols
     other_parts = []
-    for _ in range(num_numbers):
-        other_parts.append(str(secrets.randbelow(10)))
-    for _ in range(num_symbols):
-        other_parts.append(secrets.choice(string.punctuation))
+    if num_numbers > 0:
+        for _ in range(num_numbers):
+            other_parts.append(str(secrets.randbelow(10)))
+    if num_symbols > 0:
+        for _ in range(num_symbols):
+            other_parts.append(secrets.choice(string.punctuation))
 
     # 3. Shuffle and join
     rng = secrets.SystemRandom()
@@ -1379,7 +1381,11 @@ def generate_memorable_password(num_words, min_length, max_length, num_numbers, 
     # 4. Pad to meet min_length
     if len(password) < min_length:
         padding_needed = min_length - len(password)
-        padding_chars = string.ascii_letters + string.digits + string.punctuation
+        padding_chars = string.ascii_letters
+        if num_numbers > 0:
+            padding_chars += string.digits
+        if num_symbols > 0:
+            padding_chars += string.punctuation
         password += ''.join(secrets.choice(padding_chars) for _ in range(padding_needed))
 
     # 5. Truncate to meet max_length
