@@ -1324,11 +1324,24 @@ def generate_random_password(length, use_uppercase, use_lowercase, use_numbers, 
     password = ''.join(secrets.choice(character_set) for _ in range(length))
     return password
 
-def generate_memorable_password(num_words, min_length, max_length, num_numbers, num_symbols, capitalization, leet_level):
+def generate_memorable_password(num_words, min_length, max_length, num_numbers, num_symbols, capitalization, leet_level, word_length=0):
     """Generates an advanced memorable password."""
     words = WORDLIST
     if not words:
         raise ValueError("The wordlist is empty.")
+
+    if max_length > 0 and word_length > 0 and word_length * num_words > max_length:
+        raise ValueError("Word length is too high for the max_length specified")
+
+    if word_length > 0:
+        words = [word for word in words if len(word) <= word_length]
+    elif max_length > 0:
+        # Dynamically adjust word length based on max_length
+        avg_word_length = max_length // num_words
+        words = [word for word in words if len(word) <= avg_word_length]
+
+    if not words:
+        raise ValueError("No words found matching the specified length criteria.")
 
     if num_words < 1:
         raise ValueError("A memorable password must have at least one word.")
@@ -1423,6 +1436,8 @@ def main():
                                   help='Minimum password length. Pads with random characters if needed.')
     parser_memorable.add_argument('-M', '--max-length', type=int, default=0,
                                   help='Maximum password length. Truncates the password if needed.')
+    parser_memorable.add_argument('-W', '--word-length', type=int, default=0,
+                                  help='Maximum word length. Overrides dynamic word length detection.')
     parser_memorable.add_argument('-n', '--num-numbers', type=int, default=DEFAULT_NUM_NUMBERS,
                                   help=f'Number of numbers to include (default: {DEFAULT_NUM_NUMBERS}).')
     parser_memorable.add_argument('-S', '--num-symbols', type=int, default=DEFAULT_NUM_SYMBOLS,
@@ -1460,7 +1475,8 @@ def main():
                     args.num_numbers,
                     args.num_symbols,
                     args.capitalization,
-                    args.leet
+                    args.leet,
+                    args.word_length
                 )
             passwords.append(password)
     except (ValueError, FileNotFoundError) as e:
