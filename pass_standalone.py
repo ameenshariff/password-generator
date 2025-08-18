@@ -4,6 +4,14 @@ import argparse
 import secrets
 import string
 
+# Dependency: zxcvbn - pip install zxcvbn
+try:
+    from zxcvbn import zxcvbn
+except ImportError:
+    print("Error: To use the password strength feature, please install the zxcvbn library:")
+    print("pip install zxcvbn")
+    exit(1)
+
 WORDLIST = [
     "abacus", "abdomen", "abdominal", "abide", "abiding", "ability", "ablaze",
     "able", "abnormal", "abrasion", "abrasive", "abreast", "abridge", "abroad",
@@ -1306,6 +1314,33 @@ DEFAULT_NUM_NUMBERS = 2
 DEFAULT_NUM_SYMBOLS = 2
 LEET_SUBSTITUTIONS = {'a': '4', 'e': '3', 'i': '1', 'o': '0', 's': '5', 't': '7'}
 
+def display_password_strength(password):
+    """Analyzes and displays the password strength based on crack time."""
+    results = zxcvbn(password)
+    crack_time_seconds = results['crack_times_seconds']['offline_fast_hashing_1e10_per_second']
+    crack_time_display = results['crack_times_display']['offline_fast_hashing_1e10_per_second']
+
+    if crack_time_seconds < 60:
+        strength_text = "\033[91mVery Weak"
+    elif crack_time_seconds < 3600:
+        strength_text = "\033[91mWeak"
+    elif crack_time_seconds < 86400:
+        strength_text = "\033[93mModerate"
+    elif crack_time_seconds < 31536000:
+        strength_text = "\033[92mStrong"
+    else:
+        strength_text = "\033[92mVery Strong"
+
+    print(f"Strength: {strength_text}\033[0m (about {crack_time_display} to crack)")
+
+    score = results['score']
+    if score < 3:
+        suggestions = results.get('feedback', {}).get('suggestions', [])
+        if suggestions:
+            print("Suggestions:")
+            for suggestion in suggestions:
+                print(f"- {suggestion}")
+
 def generate_random_password(length, use_uppercase, use_lowercase, use_numbers, use_symbols):
     """Generates a random password based on specified criteria."""
     character_set = ''
@@ -1426,7 +1461,8 @@ def main():
     parser_random.add_argument('-c', '--count', type=int, default=1, help='Number of passwords to generate (default: 1).')
     parser_random.add_argument('-nc', '--no-copy', action='store_false', dest='copy', help='Do not copy the password to the clipboard.')
     parser_random.add_argument('--mask', action='store_true', help='Mask the password in the terminal output.')
-    parser_random.set_defaults(use_uppercase=True, use_lowercase=True, use_numbers=True, use_symbols=True, copy=True)
+    parser_random.add_argument('--no-strength', action='store_false', dest='strength', help='Do not display password strength.')
+    parser_random.set_defaults(use_uppercase=True, use_lowercase=True, use_numbers=True, use_symbols=True, copy=True, strength=True)
 
     # Sub-parser for memorable passwords
     parser_memorable = subparsers.add_parser('memorable', help='Generate a memorable, leetspeak-style password.')
@@ -1449,7 +1485,8 @@ def main():
     parser_memorable.add_argument('-c', '--count', type=int, default=1, help='Number of passwords to generate (default: 1).')
     parser_memorable.add_argument('-nc', '--no-copy', action='store_false', dest='copy', help='Do not copy the password to the clipboard.')
     parser_memorable.add_argument('--mask', action='store_true', help='Mask the password in the terminal output.')
-    parser_memorable.set_defaults(copy=True)
+    parser_memorable.add_argument('--no-strength', action='store_false', dest='strength', help='Do not display password strength.')
+    parser_memorable.set_defaults(copy=True, strength=True)
 
     args = parser.parse_args()
 
@@ -1508,6 +1545,8 @@ def main():
     else:
         for password in passwords:
             print(password)
+            if args.strength:
+                display_password_strength(password)
         if copied:
             print("\n(Password copied to clipboard)")
 
