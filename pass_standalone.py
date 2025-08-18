@@ -1405,17 +1405,17 @@ def main():
     parser_random.add_argument('--no-numbers', action='store_false', dest='use_numbers', help='Exclude numbers.')
     parser_random.add_argument('--no-symbols', action='store_false', dest='use_symbols', help='Exclude symbols.')
     parser_random.add_argument('-c', '--count', type=int, default=1, help='Number of passwords to generate (default: 1).')
-    parser_random.add_argument('--copy', action='store_true', help='Copy the password to the clipboard (only for single password generation).')
+    parser_random.add_argument('-nc', '--no-copy', action='store_false', dest='copy', help='Do not copy the password to the clipboard.')
     parser_random.add_argument('--mask', action='store_true', help='Mask the password in the terminal output.')
-    parser_random.set_defaults(use_uppercase=True, use_lowercase=True, use_numbers=True, use_symbols=True)
+    parser_random.set_defaults(use_uppercase=True, use_lowercase=True, use_numbers=True, use_symbols=True, copy=True)
 
     # Sub-parser for memorable passwords
     parser_memorable = subparsers.add_parser('memorable', help='Generate a memorable, leetspeak-style password.')
     parser_memorable.add_argument('-w', '--num-words', type=int, default=DEFAULT_WORD_COUNT,
                                   help=f'Number of words to combine (default: {DEFAULT_WORD_COUNT}).')
-    parser_memorable.add_argument('--min-length', type=int, default=0,
+    parser_memorable.add_argument('-m', '--min-length', type=int, default=0,
                                   help='Minimum password length. Pads with random characters if needed.')
-    parser_memorable.add_argument('--max-length', type=int, default=0,
+    parser_memorable.add_argument('-M', '--max-length', type=int, default=0,
                                   help='Maximum password length. Truncates the password if needed.')
     parser_memorable.add_argument('-n', '--num-numbers', type=int, default=DEFAULT_NUM_NUMBERS,
                                   help=f'Number of numbers to include (default: {DEFAULT_NUM_NUMBERS}).')
@@ -1426,8 +1426,9 @@ def main():
     parser_memorable.add_argument('-L', '--leet', choices=['none', 'some', 'all'], default='some',
                                   help='Level of leetspeak substitution (default: some).')
     parser_memorable.add_argument('-c', '--count', type=int, default=1, help='Number of passwords to generate (default: 1).')
-    parser_memorable.add_argument('--copy', action='store_true', help='Copy the password to the clipboard (only for single password generation).')
+    parser_memorable.add_argument('-nc', '--no-copy', action='store_false', dest='copy', help='Do not copy the password to the clipboard.')
     parser_memorable.add_argument('--mask', action='store_true', help='Mask the password in the terminal output.')
+    parser_memorable.set_defaults(copy=True)
 
     args = parser.parse_args()
 
@@ -1469,12 +1470,12 @@ def main():
                 pyperclip.copy(passwords[0])
                 copied = True
             except ImportError:
-                print("Error: To use the --copy feature, please install the pyperclip library:")
+                print("Error: To use the copy feature, please install the pyperclip library:")
                 print("pip install pyperclip")
             except Exception as e:
                 print(f"Error: Could not copy to clipboard. {e}")
         else:
-            print("Note: --copy is only available when generating a single password.")
+            print("Note: Copying to clipboard is only available when generating a single password.")
 
     # Handle output
     if args.mask:
